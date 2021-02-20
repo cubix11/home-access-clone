@@ -1,7 +1,8 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion */
 import mongoose from 'mongoose';
 import env from './dotenv';
 
-const MONGO_URI: string = env.MONGO_URI;
+const MONGO_URI: string = env.MONGO_URI!;
 mongoose.connect(MONGO_URI, {
     useCreateIndex: true,
     useFindAndModify: true,
