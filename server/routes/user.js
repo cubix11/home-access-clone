@@ -65,6 +65,5 @@ router.post('/login', async (req, res) => {
     else {
         res.json({ error: 'Password is incorrect' });
     }
-    ;
 });
 exports.default = router;

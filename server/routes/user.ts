@@ -72,7 +72,7 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
         getToken(user, res);
     } else {
         res.json({ error: 'Password is incorrect' });
-    };
+    }
 });
 
 export default router;
