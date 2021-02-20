@@ -25,7 +25,7 @@
     "helmet": "^4.4.1",
     "joi": "^17.4.0",
     "jsonwebtoken": "^8.5.1",
-    "monk": "^7.3.3",
+    "mongoose": "^5.11.17",
     "nodemailer": "^6.4.18",
     "string-encode-decode": "^1.0.7",
     "volleyball": "^1.5.1"

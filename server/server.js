@@ -9,6 +9,8 @@ const express_1 = __importDefault(require("express"));
 const helmet_1 = __importDefault(require("helmet"));
 const volleyball_1 = __importDefault(require("volleyball"));
 const data_1 = __importDefault(require("./routes/data"));
+const db_1 = __importDefault(require("./db"));
+db_1.default;
 const app = express_1.default();
 const PORT = process.env.PORT || 3000;
 app.use(helmet_1.default());

@@ -1,23 +1,13 @@
 import { Request, Response, NextFunction } from 'express';
 import sendgrid from '@sendgrid/mail';
 import env from './dotenv';
+import { Email } from './types';
 
 const API_KEY: string = env.SENDGRID_KEY;
 sendgrid.setApiKey(API_KEY);
-interface From {
-    email: string;
-    name: string;
-}
-interface Email {
-    to: string;
-    from: From;
-    subject: string;
-    text: string;
-    html: string;
-}
 
 export function checkUser(req: Request, res: Response, next: NextFunction): void {
-    const bearerToken: string = req.get('Authorization');
+    const bearerToken: string | undefined = req.get('Authorization');
     console.log(bearerToken);
     next();
 }

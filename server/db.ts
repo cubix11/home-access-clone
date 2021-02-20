@@ -1,4 +1,15 @@
-import monk from 'monk';
+import mongoose from 'mongoose';
 import env from './dotenv';
-const db = monk(env.MONGO_URI);
-export const users = db.get('users');
+
+const MONGO_URI: string = env.MONGO_URI;
+mongoose.connect(MONGO_URI, {
+    useCreateIndex: true,
+    useFindAndModify: true,
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+});
+
+const db = mongoose.connection;
+db.on('error', () => console.error('Something went wrong'));
+db.once('open', (): void => console.log('Connected'));
+export default db;

@@ -8,6 +8,8 @@ const joi_1 = __importDefault(require("joi"));
 exports.signupSchema = joi_1.default.object().keys({
     username: joi_1.default.string().trim().regex(/(^[a-zA-Z0-9_-]*$)/).min(2).max(30).required(),
     password: joi_1.default.string().trim().regex(/(^[a-zA-Z0-9_!@#$%^&*()-="',.<>/?:`~]*$)/).min(2).max(30).required(),
+    confirmPassword: joi_1.default.string().trim().valid(joi_1.default.ref('password')).required(),
+    email: joi_1.default.string().trim().email().required(),
     ha_username: joi_1.default.string().trim().regex(/(^[a-zA-Z0-9_!@#$%^&*()-="',.<>/?:`~]*$)/).min(2).max(30).required(),
     ha_password: joi_1.default.string().trim().regex(/(^[a-zA-Z0-9_!@#$%^&*()-="',.<>/?:`~]*$)/).min(2).max(30).required()
 });
