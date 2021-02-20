@@ -1,16 +1,36 @@
+/* eslint-disable @typescript-eslint/ban-types */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 import { Request, Response, NextFunction } from 'express';
 import sendgrid from '@sendgrid/mail';
 import env from './dotenv';
 import { Email } from './types';
+import jwt, { JsonWebTokenError, NotBeforeError, TokenExpiredError } from 'jsonwebtoken';
 
 const API_KEY: string = env.SENDGRID_KEY!;
 sendgrid.setApiKey(API_KEY);
 
 export function checkUser(req: Request, res: Response, next: NextFunction): void {
     const bearerToken: string | undefined = req.get('Authorization');
-    console.log(bearerToken);
-    next();
+    let invalid = false;
+    if(bearerToken) {
+        const token: string = bearerToken.split(' ')[1];
+        console.log(token);
+        jwt.verify(token, env.SECRET_TOKEN!, (err: JsonWebTokenError | NotBeforeError | TokenExpiredError | null, username: object | undefined): void => {
+            if(err) {
+                invalid = true;
+            } else {
+                req.username = username!.username;
+            }
+        });
+    } else {
+        invalid = true;
+    }
+    if(invalid) {
+        const error: Error = new Error('Unauthorized');
+        res.status(403).json({ error: error.message });
+    } else {
+        next();
+    }
 }
 
 export async function sendEmail(recieveEmail: string, subject: string, body: string): Promise<void> {
@@ -25,4 +45,12 @@ export async function sendEmail(recieveEmail: string, subject: string, body: str
         html: body
     };
     sendgrid.send(email);
+}
+
+export function validateVerifyEmail(verified: boolean, res: Response): boolean {
+    if(!verified) {
+        res.json({ error: 'Please verify your account first' });
+        return true;
+    }
+    return false;
 }

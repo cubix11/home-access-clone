@@ -22,7 +22,6 @@
     "@types/helmet": "^4.0.0",
     "@types/joi": "^17.2.3",
     "@types/jsonwebtoken": "^8.5.0",
-    "@types/nodemailer": "^6.4.0",
     "axios": "^0.21.1",
     "bcrypt": "^5.0.0",
     "express": "^4.17.1",

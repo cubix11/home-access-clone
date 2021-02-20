@@ -1,3 +1,4 @@
+import { string } from 'joi';
 import { Document } from 'mongoose';
 
 interface From {
@@ -21,3 +22,11 @@ export interface UserInput {
 }
 
 export type UserSchema = UserInput & Document;
+
+export interface UpdateType {
+    username?: string;
+    ha_username?: string;
+    ha_password?: string;
+    email?: string;
+    password?: string;
+}
