@@ -40,6 +40,10 @@ const User = new mongoose_1.Schema({
     ha_password: {
         type: String,
         required: true
+    },
+    verified: {
+        type: Boolean,
+        required: true
     }
 });
 const model = mongoose_1.default.model('User', User, 'users');

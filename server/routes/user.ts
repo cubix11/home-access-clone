@@ -9,15 +9,18 @@ import env from '../dotenv';
 import { decode, encode } from 'string-encode-decode';
 import User from '../models/User';
 import { UpdateType, UserInput } from '../types';
-import { checkUser } from '../middlewares';
+import { checkUser, sendEmail } from '../middlewares';
 const router: Router = Router();
+const url = process.env.NODE_ENV ? '' : 'http://localhost:3000';
 
 function getToken(username: string, res: Response): void {
+    console.log(env.JWT_TIME);
+    console.log(Number(env.JWT_TIME!) || env.JWT_TIME!);
     jwt.sign(
         { username },
         env.SECRET_TOKEN!,
         {
-            expiresIn: parseInt(env.JWT_TIME!)
+            expiresIn: Number(env.JWT_TIME!) || env.JWT_TIME!
         },
         (err: Error | null, token: string | undefined) => {
             if(err) {
@@ -44,6 +47,7 @@ router.post('/create', async (req: Request, res: Response): Promise<void> => {
         res.status(409).json({ error: error.message });
         return;
     }
+    const password = user.password
     const hashedPassword = await bcrypt.hash(user.password, 15);
     user.password = hashedPassword;
     user.ha_password = encode(user.ha_password);
@@ -57,6 +61,9 @@ router.post('/create', async (req: Request, res: Response): Promise<void> => {
     });
     newUser.save();
     res.statusCode = 202;
+    const html = `<p>Click on the <a href="${url}/user/verify?username=${encode(user.username)}&password=${encode(password)}">link</a> to confirm your email`;
+    console.log(html);
+    sendEmail(user.email!, 'Confirm Email', html);
     getToken(encode(user.username), res);
 });
 
@@ -85,7 +92,7 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
 });
 
 router.delete('/delete', checkUser, async (req: Request, res: Response): Promise<void> => {
-    const username: string = req.body.username;
+    const username: string = decode(req.username);
     const password: string = req.body.password;
     const user = await User.findOne({ username });
     if(!user) {
@@ -105,7 +112,7 @@ router.delete('/delete', checkUser, async (req: Request, res: Response): Promise
 router.patch('/update', checkUser, async (req: Request, res: Response): Promise<void> => {
     const updated: UpdateType = req.body;
     const password = updated.password;
-    const username = req.username;
+    const username = decode(req.username);
     delete updated.password;
     const user = await User.findOne({ username });
     if(!user) {
@@ -116,15 +123,31 @@ router.patch('/update', checkUser, async (req: Request, res: Response): Promise<
     const userPassword: string | undefined = user.password;
     const passCorrect: boolean = await bcrypt.compare(password, userPassword!);
     if(passCorrect) {
-        User.updateOne({ username }, { $set: updated });
+        const updatedUser = await User.findOneAndUpdate({ username }, { $set: updated }, { new: true });
+        res.json({ user: updatedUser });
     } else {
         const error: Error = new Error('Password is incorrect');
         res.json({ error: error.message });
     }
 });
 
-router.get('/test', checkUser, (req: Request, res: Response): void => {
-    res.json({ message: 'Hello World' });
+router.get('/verify', async (req: Request, res: Response): Promise<void> => {
+    let { username, password } = req.query;
+    username = decode(username);
+    password = decode(password);
+    console.log(username);
+    console.log(password);
+    const user = await User.findOne({ username });
+    if(!user) {
+        res.send('No user with username');
+        return;
+    }
+    const correctPass: boolean = await bcrypt.compare(password, user.password!);
+    if(!correctPass) {
+        res.send('Incorrect password');
+    }
+    await User.updateOne({ username }, { $set: { verified: true } });
+    res.send('Congrats, you are verified!');
 });
 
 export default router;

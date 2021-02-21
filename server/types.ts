@@ -21,7 +21,9 @@ export interface UserInput {
     ha_password: string;
 }
 
-export type UserSchema = UserInput & Document;
+export interface UserSchema extends UserInput, Document {
+    verified: boolean
+}
 
 export interface UpdateType {
     username?: string;

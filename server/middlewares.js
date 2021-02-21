@@ -7,7 +7,7 @@ exports.validateVerifyEmail = exports.sendEmail = exports.checkUser = void 0;
 const mail_1 = __importDefault(require("@sendgrid/mail"));
 const dotenv_1 = __importDefault(require("./dotenv"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
-const API_KEY = dotenv_1.default.SENDGRID_KEY;
+const API_KEY = (process.env.NODE_ENV ? dotenv_1.default.SENDGRID_KEY_PRODUCTION : dotenv_1.default.SENDGRID_KEY_DEVELOPEMENT);
 mail_1.default.setApiKey(API_KEY);
 function checkUser(req, res, next) {
     const bearerToken = req.get('Authorization');
@@ -20,6 +20,7 @@ function checkUser(req, res, next) {
                 invalid = true;
             }
             else {
+                console.log(username);
                 req.username = username.username;
             }
         });

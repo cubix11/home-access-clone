@@ -21,6 +21,10 @@ const User: Schema = new Schema({
     ha_password: {
         type: String,
         required: true
+    },
+    verified: {
+        type: Boolean,
+        required: true
     }
 });
 

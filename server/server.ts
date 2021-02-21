@@ -11,6 +11,6 @@ const PORT: number | string = process.env.PORT || 3000;
 app.use(helmet());
 app.use(express.json());
 app.use(volleyball);
-app.use('/users', userRoutes);
+app.use('/user', userRoutes);
 app.use('/data', dataRoutes);
 app.listen(PORT, (): void => console.log('Listening on port', PORT));

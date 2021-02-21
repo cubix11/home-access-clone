@@ -16,6 +16,6 @@ const PORT = process.env.PORT || 3000;
 app.use(helmet_1.default());
 app.use(express_1.default.json());
 app.use(volleyball_1.default);
-app.use('/users', user_1.default);
+app.use('/user', user_1.default);
 app.use('/data', data_1.default);
 app.listen(PORT, () => console.log('Listening on port', PORT));

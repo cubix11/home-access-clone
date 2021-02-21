@@ -6,7 +6,7 @@ import env from './dotenv';
 import { Email } from './types';
 import jwt, { JsonWebTokenError, NotBeforeError, TokenExpiredError } from 'jsonwebtoken';
 
-const API_KEY: string = env.SENDGRID_KEY!;
+const API_KEY: string = (process.env.NODE_ENV ? env.SENDGRID_KEY_PRODUCTION : env.SENDGRID_KEY_DEVELOPEMENT)!;
 sendgrid.setApiKey(API_KEY);
 
 export function checkUser(req: Request, res: Response, next: NextFunction): void {
@@ -19,6 +19,7 @@ export function checkUser(req: Request, res: Response, next: NextFunction): void
             if(err) {
                 invalid = true;
             } else {
+                console.log(username);
                 req.username = username!.username;
             }
         });

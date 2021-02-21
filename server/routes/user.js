@@ -15,9 +15,12 @@ const string_encode_decode_1 = require("string-encode-decode");
 const User_1 = __importDefault(require("../models/User"));
 const middlewares_1 = require("../middlewares");
 const router = express_1.Router();
+const url = process.env.NODE_ENV ? '' : 'http://localhost:3000';
 function getToken(username, res) {
+    console.log(dotenv_1.default.JWT_TIME);
+    console.log(Number(dotenv_1.default.JWT_TIME) || dotenv_1.default.JWT_TIME);
     jsonwebtoken_1.default.sign({ username }, dotenv_1.default.SECRET_TOKEN, {
-        expiresIn: parseInt(dotenv_1.default.JWT_TIME)
+        expiresIn: Number(dotenv_1.default.JWT_TIME) || dotenv_1.default.JWT_TIME
     }, (err, token) => {
         if (err) {
             const error = new Error('Something went wrong :(');
@@ -42,6 +45,7 @@ router.post('/create', async (req, res) => {
         res.status(409).json({ error: error.message });
         return;
     }
+    const password = user.password;
     const hashedPassword = await bcrypt_1.default.hash(user.password, 15);
     user.password = hashedPassword;
     user.ha_password = string_encode_decode_1.encode(user.ha_password);
@@ -55,6 +59,9 @@ router.post('/create', async (req, res) => {
     });
     newUser.save();
     res.statusCode = 202;
+    const html = `<p>Click on the <a href="${url}/user/verify?username=${string_encode_decode_1.encode(user.username)}&password=${string_encode_decode_1.encode(password)}">link</a> to confirm your email`;
+    console.log(html);
+    middlewares_1.sendEmail(user.email, 'Confirm Email', html);
     getToken(string_encode_decode_1.encode(user.username), res);
 });
 router.post('/login', async (req, res) => {
@@ -82,7 +89,7 @@ router.post('/login', async (req, res) => {
     }
 });
 router.delete('/delete', middlewares_1.checkUser, async (req, res) => {
-    const username = req.body.username;
+    const username = string_encode_decode_1.decode(req.username);
     const password = req.body.password;
     const user = await User_1.default.findOne({ username });
     if (!user) {
@@ -102,7 +109,7 @@ router.delete('/delete', middlewares_1.checkUser, async (req, res) => {
 router.patch('/update', middlewares_1.checkUser, async (req, res) => {
     const updated = req.body;
     const password = updated.password;
-    const username = req.username;
+    const username = string_encode_decode_1.decode(req.username);
     delete updated.password;
     const user = await User_1.default.findOne({ username });
     if (!user) {
@@ -113,14 +120,30 @@ router.patch('/update', middlewares_1.checkUser, async (req, res) => {
     const userPassword = user.password;
     const passCorrect = await bcrypt_1.default.compare(password, userPassword);
     if (passCorrect) {
-        User_1.default.updateOne({ username }, { $set: updated });
+        const updatedUser = await User_1.default.findOneAndUpdate({ username }, { $set: updated }, { new: true });
+        res.json({ user: updatedUser });
     }
     else {
         const error = new Error('Password is incorrect');
         res.json({ error: error.message });
     }
 });
-router.get('/test', middlewares_1.checkUser, (req, res) => {
-    res.json({ message: 'Hello World' });
+router.get('/verify', async (req, res) => {
+    let { username, password } = req.query;
+    username = string_encode_decode_1.decode(username);
+    password = string_encode_decode_1.decode(password);
+    console.log(username);
+    console.log(password);
+    const user = await User_1.default.findOne({ username });
+    if (!user) {
+        res.send('No user with username');
+        return;
+    }
+    const correctPass = await bcrypt_1.default.compare(password, user.password);
+    if (!correctPass) {
+        res.send('Incorrect password');
+    }
+    await User_1.default.updateOne({ username }, { $set: { verified: true } });
+    res.send('Congrats, you are verified!');
 });
 exports.default = router;
