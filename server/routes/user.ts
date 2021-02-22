@@ -9,6 +9,7 @@ import { decode, encode } from 'string-encode-decode';
 import User from '../models/User';
 import { UpdateType, UserInput } from '../types';
 import { checkUser, sendEmail, validateVerifyEmail } from '../middlewares';
+const JWT_TIME: number | string = '1h';
 const router: Router = Router();
 const url = process.env.NODE_ENV ? '' : 'http://localhost:3000';
 
@@ -17,7 +18,7 @@ function getToken(username: string, res: Response): void {
         { username },
         env.SECRET_TOKEN!,
         {
-            expiresIn: Number(env.JWT_TIME!) || env.JWT_TIME!
+            expiresIn: Number(JWT_TIME) || JWT_TIME
         },
         (err: Error | null, token: string | undefined) => {
             if(err) {

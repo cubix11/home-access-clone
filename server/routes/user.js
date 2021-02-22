@@ -13,11 +13,12 @@ const dotenv_1 = __importDefault(require("../dotenv"));
 const string_encode_decode_1 = require("string-encode-decode");
 const User_1 = __importDefault(require("../models/User"));
 const middlewares_1 = require("../middlewares");
+const JWT_TIME = '1h';
 const router = express_1.Router();
 const url = process.env.NODE_ENV ? '' : 'http://localhost:3000';
 function getToken(username, res) {
     jsonwebtoken_1.default.sign({ username }, dotenv_1.default.SECRET_TOKEN, {
-        expiresIn: Number(dotenv_1.default.JWT_TIME) || dotenv_1.default.JWT_TIME
+        expiresIn: Number(JWT_TIME) || JWT_TIME
     }, (err, token) => {
         if (err) {
             const error = new Error('Something went wrong :(');
