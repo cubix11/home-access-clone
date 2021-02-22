@@ -1,0 +1,6 @@
+.env
+push.bat
+tsconfig.json
+node_modules
+.vs/
+.eslintrc.json
