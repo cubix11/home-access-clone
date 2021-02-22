@@ -8,7 +8,7 @@ If the user wants to update their settings, they will have to enter password.
 Next, everything except for the username is encoded in the database, and even the data in the JSON web token is encoded.  
 
 ## Key
-? means optional
+? means optional  
 ! means required
 
 ## Routes
