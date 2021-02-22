@@ -66,7 +66,7 @@ router.post('/login', async (req, res) => {
     const valid = schema_1.loginSchema.validate(user);
     if (valid.error) {
         const error = new Error(valid.error.details[0].message);
-        res.status(415).json({ error: error.message });
+        res.status(422).json({ error: error.message });
         return;
     }
     const userExists = await User_1.default.findOne({ username: user.username });
