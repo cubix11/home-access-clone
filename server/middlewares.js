@@ -6,6 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.validateVerifyEmail = exports.sendEmail = exports.checkUser = void 0;
 const mail_1 = __importDefault(require("@sendgrid/mail"));
 const dotenv_1 = __importDefault(require("./dotenv"));
+const User_1 = __importDefault(require("./models/User"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
 const API_KEY = (process.env.NODE_ENV ? dotenv_1.default.SENDGRID_KEY_PRODUCTION : dotenv_1.default.SENDGRID_KEY_DEVELOPEMENT);
 mail_1.default.setApiKey(API_KEY);
@@ -30,7 +31,7 @@ function checkUser(req, res, next) {
     }
     if (invalid) {
         const error = new Error('Unauthorized');
-        res.status(403).json({ error: error.message });
+        res.status(401).json({ error: error.message });
     }
     else {
         next();
@@ -51,9 +52,11 @@ async function sendEmail(recieveEmail, subject, body) {
     mail_1.default.send(email);
 }
 exports.sendEmail = sendEmail;
-function validateVerifyEmail(verified, res) {
+async function validateVerifyEmail(username, res) {
+    const verified = (await User_1.default.findOne({ username })).verified;
     if (!verified) {
-        res.json({ error: 'Please verify your account first' });
+        const error = new Error('Your account needs to be verified');
+        res.status(403).json({ error: error.message });
         return true;
     }
     return false;

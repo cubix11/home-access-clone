@@ -1,4 +1,3 @@
-import { string } from 'joi';
 import { Document } from 'mongoose';
 
 interface From {
@@ -31,4 +30,5 @@ export interface UpdateType {
     ha_password?: string;
     email?: string;
     password?: string;
+    newPassword?: string;
 }

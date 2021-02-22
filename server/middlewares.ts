@@ -4,6 +4,7 @@ import { Request, Response, NextFunction } from 'express';
 import sendgrid from '@sendgrid/mail';
 import env from './dotenv';
 import { Email } from './types';
+import User from './models/User';
 import jwt, { JsonWebTokenError, NotBeforeError, TokenExpiredError } from 'jsonwebtoken';
 
 const API_KEY: string = (process.env.NODE_ENV ? env.SENDGRID_KEY_PRODUCTION : env.SENDGRID_KEY_DEVELOPEMENT)!;
@@ -28,7 +29,7 @@ export function checkUser(req: Request, res: Response, next: NextFunction): void
     }
     if(invalid) {
         const error: Error = new Error('Unauthorized');
-        res.status(403).json({ error: error.message });
+        res.status(401).json({ error: error.message });
     } else {
         next();
     }
@@ -48,9 +49,11 @@ export async function sendEmail(recieveEmail: string, subject: string, body: str
     sendgrid.send(email);
 }
 
-export function validateVerifyEmail(verified: boolean, res: Response): boolean {
+export async function validateVerifyEmail(username: string, res: Response): Promise<boolean> {
+    const verified: boolean = (await User.findOne({ username }))!.verified;
     if(!verified) {
-        res.json({ error: 'Please verify your account first' });
+        const error: Error = new Error('Your account needs to be verified');
+        res.status(403).json({ error: error.message });
         return true;
     }
     return false;
