@@ -53,12 +53,12 @@ router.post('/signup', async (req, res) => {
         email: string_encode_decode_1.encode(user.email),
         ha_username: string_encode_decode_1.encode(user.ha_username),
         ha_password: user.ha_password,
-        verified: true
+        verified: false
     });
     newUser.save();
     res.statusCode = 201;
-    // const html = `<p>Click on the <a href="${url}/user/verify?username=${encode(user.username)}&password=${encode(password)}">link</a> to confirm your email`;
-    // sendEmail(user.email!, 'Confirm Email', html);
+    const html = `<p>Click on the <a href="${url}/user/verify?username=${string_encode_decode_1.encode(user.username)}&password=${string_encode_decode_1.encode(password)}">link</a> to confirm your email</p><p>If this was not yours, please ignore this email</p>`;
+    middlewares_1.sendEmail(user.email, 'Confirm Email', html);
     getToken(string_encode_decode_1.encode(user.username), res);
 });
 router.post('/login', async (req, res) => {
@@ -170,5 +170,24 @@ router.get('/verify', async (req, res) => {
     }
     await User_1.default.updateOne({ username }, { $set: { verified: true } });
     res.send('Congrats, you are verified!');
+});
+router.post('/resend', middlewares_1.checkUser, async (req, res) => {
+    const username = string_encode_decode_1.decode(req.username);
+    console.log(username);
+    const user = await User_1.default.findOne({ username });
+    if (!user) {
+        const error = new Error('No user with that username');
+        res.status(404).json({ error: error.message });
+        return;
+    }
+    const password = req.body.password;
+    if (!(await bcrypt_1.default.compare(password, user.password))) {
+        const error = new Error('Password incorrect');
+        res.status(403).json({ error: error.message });
+        return;
+    }
+    const html = `<p>Click on the <a href="${url}/user/verify?username=${string_encode_decode_1.encode(username)}&password=${string_encode_decode_1.encode(password)}">link</a> to confirm your email</p><p>If this was not yours, please ignore this email</p>`;
+    middlewares_1.sendEmail(string_encode_decode_1.decode(user.email), 'Email Confirmation', html);
+    res.json({ message: 'Email sent' });
 });
 exports.default = router;

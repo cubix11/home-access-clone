@@ -55,12 +55,12 @@ router.post('/signup', async (req: Request, res: Response): Promise<void> => {
         email: encode(user.email),
         ha_username: encode(user.ha_username),
         ha_password: user.ha_password,
-        verified: true
+        verified: false
     });
     newUser.save();
     res.statusCode = 201;
-    // const html = `<p>Click on the <a href="${url}/user/verify?username=${encode(user.username)}&password=${encode(password)}">link</a> to confirm your email`;
-    // sendEmail(user.email!, 'Confirm Email', html);
+    const html = `<p>Click on the <a href="${url}/user/verify?username=${encode(user.username)}&password=${encode(password)}">link</a> to confirm your email</p><p>If this was not yours, please ignore this email</p>`;
+    sendEmail(user.email!, 'Confirm Email', html);
     getToken(encode(user.username), res);
 });
 
@@ -171,6 +171,26 @@ router.get('/verify', async (req: Request, res: Response): Promise<void> => {
     }
     await User.updateOne({ username }, { $set: { verified: true } });
     res.send('Congrats, you are verified!');
+});
+
+router.post('/resend', checkUser, async (req: Request, res: Response): Promise<void> => {
+    const username: string = decode(req.username);
+    console.log(username);
+    const user = await User.findOne({ username });
+    if(!user) {
+        const error: Error = new Error('No user with that username');
+        res.status(404).json({ error: error.message });
+        return;
+    }
+    const password: string = req.body.password;
+    if(!(await bcrypt.compare(password, user.password))) {
+        const error: Error = new Error('Password incorrect');
+        res.status(403).json({ error: error.message });
+        return;
+    }
+    const html = `<p>Click on the <a href="${url}/user/verify?username=${encode(username)}&password=${encode(password)}">link</a> to confirm your email</p><p>If this was not yours, please ignore this email</p>`;
+    sendEmail(decode(user.email!), 'Email Confirmation', html);
+    res.json({ message: 'Email sent' });
 });
 
 export default router;
