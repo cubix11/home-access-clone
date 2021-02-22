@@ -59,7 +59,7 @@ router.post('/signup', async (req: Request, res: Response): Promise<void> => {
     });
     newUser.save();
     res.statusCode = 201;
-    const html = `<p>Click on the <a href="${url}/user/verify?username=${encode(user.username)}&password=${encode(password)}">link</a> to confirm your email`;
+    const html = `<p>Click on the <a href="${url}/user/verify?username=${encode(user.username)}&password=${encode(password)}">link</a> to confirm your email</p><p>If this was not yours, please ignore this email</p>`;
     sendEmail(user.email!, 'Confirm Email', html);
     getToken(encode(user.username), res);
 });
@@ -94,15 +94,15 @@ router.delete('/delete', checkUser, async (req: Request, res: Response): Promise
     const user = await User.findOne({ username });
     if(!user) {
         const error: Error = new Error('No user with that username');
-        res.json({ error: error.message });
+        res.status(404).json({ error: error.message });
         return;
     }
     const passwordCorrect = await bcrypt.compare(password, user.password!);
     if(passwordCorrect) {
-        res.json({ user: await User.findOneAndDelete({ username }) });
+        res.status(202).json({ user: await User.findOneAndDelete({ username }) });
     } else {
-        const error: Error = new Error('Password if incorrect');
-        res.json({ error: error.message });
+        const error: Error = new Error('Password is incorrect');
+        res.status(403).json({ error: error.message });
     }
 });
 
@@ -114,7 +114,7 @@ router.patch('/update', checkUser, async (req: Request, res: Response): Promise<
     const user = await User.findOne({ username });
     if(!user) {
         const error: Error = new Error('No user with that username');
-        res.json({ error: error.message });
+        res.status(404).json({ error: error.message });
         return;
     }
     const userPassword: string | undefined = user.password;
@@ -125,16 +125,16 @@ router.patch('/update', checkUser, async (req: Request, res: Response): Promise<
             if(await validateVerifyEmail(username, res)) return;
         }
         if('newPassword' in updated) {
+            console.log(updated.newPassword);
             const hashedPassword: string = await bcrypt.hash(updated.newPassword, 15);
             delete updated.newPassword;
             updated.password = hashedPassword;
         }
         if('username' in updated) {
             const existingUser = await User.findOne({ username: updated.username });
-            console.log(existingUser);
             if(username === updated.username) {
                 const error: Error = new Error('You are attempting to change your username to the same one as before');
-                res.json({ error: error.message });
+                res.status(400).json({ error: error.message });
                 return;
             }
             if(existingUser) {
@@ -146,12 +146,13 @@ router.patch('/update', checkUser, async (req: Request, res: Response): Promise<
             username = updated.username!;
             delete updated.username;
         }
-        Object.keys(updated).map((key: string): void => { updated[key] = encode(updated[key]); });
-        const updatedUser = await User.findOneAndUpdate({ username }, { $set: updated }, { new: true });
-        res.json({ user: updatedUser });
+        Object.keys(updated).map((key: string): void => { if(key !== 'password') updated[key] = encode(updated[key]); });
+        await User.updateOne({ username }, { $set: updated }, { new: true });
+        res.statusCode = 200;
+        getToken(encode(username), res);
     } else {
         const error: Error = new Error('Password is incorrect');
-        res.json({ error: error.message });
+        res.status(403).json({ error: error.message });
     }
 });
 
@@ -161,15 +162,35 @@ router.get('/verify', async (req: Request, res: Response): Promise<void> => {
     password = decode(password);
     const user = await User.findOne({ username });
     if(!user) {
-        res.send('No user with username');
+        res.status(404).send('No user with username');
         return;
     }
     const correctPass: boolean = await bcrypt.compare(password, user.password!);
     if(!correctPass) {
-        res.send('Incorrect password');
+        res.status(403).send('Incorrect password');
     }
     await User.updateOne({ username }, { $set: { verified: true } });
     res.send('Congrats, you are verified!');
+});
+
+router.post('/resend', checkUser, async (req: Request, res: Response): Promise<void> => {
+    const username: string = decode(req.username);
+    console.log(username);
+    const user = await User.findOne({ username });
+    if(!user) {
+        const error: Error = new Error('No user with that username');
+        res.status(404).json({ error: error.message });
+        return;
+    }
+    const password: string = req.body.password;
+    if(!(await bcrypt.compare(password, user.password))) {
+        const error: Error = new Error('Password incorrect');
+        res.status(403).json({ error: error.message });
+        return;
+    }
+    const html = `<p>Click on the <a href="${url}/user/verify?username=${encode(username)}&password=${encode(password)}">link</a> to confirm your email</p><p>If this was not yours, please ignore this email</p>`;
+    sendEmail(decode(user.email!), 'Email Confirmation', html);
+    res.json({ message: 'Email sent' });
 });
 
 export default router;
