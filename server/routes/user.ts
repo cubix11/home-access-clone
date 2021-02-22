@@ -94,15 +94,15 @@ router.delete('/delete', checkUser, async (req: Request, res: Response): Promise
     const user = await User.findOne({ username });
     if(!user) {
         const error: Error = new Error('No user with that username');
-        res.json({ error: error.message });
+        res.status(404).json({ error: error.message });
         return;
     }
     const passwordCorrect = await bcrypt.compare(password, user.password!);
     if(passwordCorrect) {
-        res.json({ user: await User.findOneAndDelete({ username }) });
+        res.status(202).json({ user: await User.findOneAndDelete({ username }) });
     } else {
-        const error: Error = new Error('Password if incorrect');
-        res.json({ error: error.message });
+        const error: Error = new Error('Password is incorrect');
+        res.status(403).json({ error: error.message });
     }
 });
 
@@ -114,7 +114,7 @@ router.patch('/update', checkUser, async (req: Request, res: Response): Promise<
     const user = await User.findOne({ username });
     if(!user) {
         const error: Error = new Error('No user with that username');
-        res.json({ error: error.message });
+        res.status(404).json({ error: error.message });
         return;
     }
     const userPassword: string | undefined = user.password;
@@ -134,7 +134,7 @@ router.patch('/update', checkUser, async (req: Request, res: Response): Promise<
             console.log(existingUser);
             if(username === updated.username) {
                 const error: Error = new Error('You are attempting to change your username to the same one as before');
-                res.json({ error: error.message });
+                res.status(400).json({ error: error.message });
                 return;
             }
             if(existingUser) {
@@ -147,11 +147,12 @@ router.patch('/update', checkUser, async (req: Request, res: Response): Promise<
             delete updated.username;
         }
         Object.keys(updated).map((key: string): void => { updated[key] = encode(updated[key]); });
-        const updatedUser = await User.findOneAndUpdate({ username }, { $set: updated }, { new: true });
-        res.json({ user: updatedUser });
+        await User.updateOne({ username }, { $set: updated }, { new: true });
+        res.statusCode = 204;
+        getToken(username, res);
     } else {
         const error: Error = new Error('Password is incorrect');
-        res.json({ error: error.message });
+        res.status(403).json({ error: error.message });
     }
 });
 
@@ -161,12 +162,12 @@ router.get('/verify', async (req: Request, res: Response): Promise<void> => {
     password = decode(password);
     const user = await User.findOne({ username });
     if(!user) {
-        res.send('No user with username');
+        res.status(404).send('No user with username');
         return;
     }
     const correctPass: boolean = await bcrypt.compare(password, user.password!);
     if(!correctPass) {
-        res.send('Incorrect password');
+        res.status(403).send('Incorrect password');
     }
     await User.updateOne({ username }, { $set: { verified: true } });
     res.send('Congrats, you are verified!');
