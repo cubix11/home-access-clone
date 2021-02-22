@@ -36,7 +36,7 @@ router.post('/signup', async (req: Request, res: Response): Promise<void> => {
     const valid = signupSchema.validate(user); // Check if username and password is valid
     if(valid.error) {
         const error: Error = new Error(valid.error.details[0].message);
-        res.status(415).json({ error: error.message });
+        res.status(422).json({ error: error.message });
         return;
     }
     const duplicateUser = await User.findOne({ username: user.username }); // Check duplicate user
