@@ -53,12 +53,12 @@ router.post('/signup', async (req, res) => {
         email: string_encode_decode_1.encode(user.email),
         ha_username: string_encode_decode_1.encode(user.ha_username),
         ha_password: user.ha_password,
-        verified: false
+        verified: true
     });
     newUser.save();
     res.statusCode = 201;
-    const html = `<p>Click on the <a href="${url}/user/verify?username=${string_encode_decode_1.encode(user.username)}&password=${string_encode_decode_1.encode(password)}">link</a> to confirm your email`;
-    middlewares_1.sendEmail(user.email, 'Confirm Email', html);
+    // const html = `<p>Click on the <a href="${url}/user/verify?username=${encode(user.username)}&password=${encode(password)}">link</a> to confirm your email`;
+    // sendEmail(user.email!, 'Confirm Email', html);
     getToken(string_encode_decode_1.encode(user.username), res);
 });
 router.post('/login', async (req, res) => {
@@ -66,7 +66,7 @@ router.post('/login', async (req, res) => {
     const valid = schema_1.loginSchema.validate(user);
     if (valid.error) {
         const error = new Error(valid.error.details[0].message);
-        res.status(415).json({ error: error.message });
+        res.status(422).json({ error: error.message });
         return;
     }
     const userExists = await User_1.default.findOne({ username: user.username });
@@ -91,16 +91,16 @@ router.delete('/delete', middlewares_1.checkUser, async (req, res) => {
     const user = await User_1.default.findOne({ username });
     if (!user) {
         const error = new Error('No user with that username');
-        res.json({ error: error.message });
+        res.status(404).json({ error: error.message });
         return;
     }
     const passwordCorrect = await bcrypt_1.default.compare(password, user.password);
     if (passwordCorrect) {
-        res.json({ user: await User_1.default.findOneAndDelete({ username }) });
+        res.status(202).json({ user: await User_1.default.findOneAndDelete({ username }) });
     }
     else {
-        const error = new Error('Password if incorrect');
-        res.json({ error: error.message });
+        const error = new Error('Password is incorrect');
+        res.status(403).json({ error: error.message });
     }
 });
 router.patch('/update', middlewares_1.checkUser, async (req, res) => {
@@ -111,7 +111,7 @@ router.patch('/update', middlewares_1.checkUser, async (req, res) => {
     const user = await User_1.default.findOne({ username });
     if (!user) {
         const error = new Error('No user with that username');
-        res.json({ error: error.message });
+        res.status(404).json({ error: error.message });
         return;
     }
     const userPassword = user.password;
@@ -123,16 +123,16 @@ router.patch('/update', middlewares_1.checkUser, async (req, res) => {
                 return;
         }
         if ('newPassword' in updated) {
+            console.log(updated.newPassword);
             const hashedPassword = await bcrypt_1.default.hash(updated.newPassword, 15);
             delete updated.newPassword;
             updated.password = hashedPassword;
         }
         if ('username' in updated) {
             const existingUser = await User_1.default.findOne({ username: updated.username });
-            console.log(existingUser);
             if (username === updated.username) {
                 const error = new Error('You are attempting to change your username to the same one as before');
-                res.json({ error: error.message });
+                res.status(400).json({ error: error.message });
                 return;
             }
             if (existingUser) {
@@ -144,13 +144,15 @@ router.patch('/update', middlewares_1.checkUser, async (req, res) => {
             username = updated.username;
             delete updated.username;
         }
-        Object.keys(updated).map((key) => { updated[key] = string_encode_decode_1.encode(updated[key]); });
-        const updatedUser = await User_1.default.findOneAndUpdate({ username }, { $set: updated }, { new: true });
-        res.json({ user: updatedUser });
+        Object.keys(updated).map((key) => { if (key !== 'password')
+            updated[key] = string_encode_decode_1.encode(updated[key]); });
+        await User_1.default.updateOne({ username }, { $set: updated }, { new: true });
+        res.statusCode = 200;
+        getToken(string_encode_decode_1.encode(username), res);
     }
     else {
         const error = new Error('Password is incorrect');
-        res.json({ error: error.message });
+        res.status(403).json({ error: error.message });
     }
 });
 router.get('/verify', async (req, res) => {
@@ -159,12 +161,12 @@ router.get('/verify', async (req, res) => {
     password = string_encode_decode_1.decode(password);
     const user = await User_1.default.findOne({ username });
     if (!user) {
-        res.send('No user with username');
+        res.status(404).send('No user with username');
         return;
     }
     const correctPass = await bcrypt_1.default.compare(password, user.password);
     if (!correctPass) {
-        res.send('Incorrect password');
+        res.status(403).send('Incorrect password');
     }
     await User_1.default.updateOne({ username }, { $set: { verified: true } });
     res.send('Congrats, you are verified!');

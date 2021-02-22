@@ -55,12 +55,12 @@ router.post('/signup', async (req: Request, res: Response): Promise<void> => {
         email: encode(user.email),
         ha_username: encode(user.ha_username),
         ha_password: user.ha_password,
-        verified: false
+        verified: true
     });
     newUser.save();
     res.statusCode = 201;
-    const html = `<p>Click on the <a href="${url}/user/verify?username=${encode(user.username)}&password=${encode(password)}">link</a> to confirm your email`;
-    sendEmail(user.email!, 'Confirm Email', html);
+    // const html = `<p>Click on the <a href="${url}/user/verify?username=${encode(user.username)}&password=${encode(password)}">link</a> to confirm your email`;
+    // sendEmail(user.email!, 'Confirm Email', html);
     getToken(encode(user.username), res);
 });
 
@@ -125,13 +125,13 @@ router.patch('/update', checkUser, async (req: Request, res: Response): Promise<
             if(await validateVerifyEmail(username, res)) return;
         }
         if('newPassword' in updated) {
+            console.log(updated.newPassword);
             const hashedPassword: string = await bcrypt.hash(updated.newPassword, 15);
             delete updated.newPassword;
             updated.password = hashedPassword;
         }
         if('username' in updated) {
             const existingUser = await User.findOne({ username: updated.username });
-            console.log(existingUser);
             if(username === updated.username) {
                 const error: Error = new Error('You are attempting to change your username to the same one as before');
                 res.status(400).json({ error: error.message });
@@ -146,10 +146,10 @@ router.patch('/update', checkUser, async (req: Request, res: Response): Promise<
             username = updated.username!;
             delete updated.username;
         }
-        Object.keys(updated).map((key: string): void => { updated[key] = encode(updated[key]); });
+        Object.keys(updated).map((key: string): void => { if(key !== 'password') updated[key] = encode(updated[key]); });
         await User.updateOne({ username }, { $set: updated }, { new: true });
-        res.statusCode = 204;
-        getToken(username, res);
+        res.statusCode = 200;
+        getToken(encode(username), res);
     } else {
         const error: Error = new Error('Password is incorrect');
         res.status(403).json({ error: error.message });
