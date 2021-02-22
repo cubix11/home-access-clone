@@ -69,7 +69,7 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
     const valid = loginSchema.validate(user);
     if(valid.error) {
         const error: Error = new Error(valid.error.details[0].message);
-        res.status(415).json({ error: error.message });
+        res.status(422).json({ error: error.message });
         return;
     }
     const userExists = await User.findOne({ username: user.username });
