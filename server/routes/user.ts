@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-non-null-asserted-optional-chain */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-// TODO: Use verification for updating everything except for email
 import { Router, Request, Response } from 'express';
 import { loginSchema, signupSchema } from '../schema';
 import bcrypt from 'bcrypt';
@@ -10,7 +9,6 @@ import { decode, encode } from 'string-encode-decode';
 import User from '../models/User';
 import { UpdateType, UserInput } from '../types';
 import { checkUser, sendEmail, validateVerifyEmail } from '../middlewares';
-import { string } from 'joi';
 const router: Router = Router();
 const url = process.env.NODE_ENV ? '' : 'http://localhost:3000';
 
@@ -32,7 +30,7 @@ function getToken(username: string, res: Response): void {
     );
 }
 
-router.post('/create', async (req: Request, res: Response): Promise<void> => {
+router.post('/signup', async (req: Request, res: Response): Promise<void> => {
     const user: UserInput = req.body;
     const valid = signupSchema.validate(user); // Check if username and password is valid
     if(valid.error) {

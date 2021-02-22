@@ -5,7 +5,6 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 /* eslint-disable @typescript-eslint/no-non-null-asserted-optional-chain */
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
-// TODO: Use verification for updating everything except for email
 const express_1 = require("express");
 const schema_1 = require("../schema");
 const bcrypt_1 = __importDefault(require("bcrypt"));
@@ -29,7 +28,7 @@ function getToken(username, res) {
         }
     });
 }
-router.post('/create', async (req, res) => {
+router.post('/signup', async (req, res) => {
     const user = req.body;
     const valid = schema_1.signupSchema.validate(user); // Check if username and password is valid
     if (valid.error) {
