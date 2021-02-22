@@ -82,8 +82,8 @@ This route is what the user goes to verify their account. This link is what is s
 #### Request Body
 password: Account password
 #### Responses
-404 (Not Found): Username from JSON web token was not found in the database
-403 (Forbidden): Password given was not correct
+404 (Not Found): Username from JSON web token was not found in the database  
+403 (Forbidden): Password given was not correct  
 200 (Successful): Email sent
 #### Description
 This route will resend the email.
